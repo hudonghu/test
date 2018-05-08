@@ -1,0 +1,155 @@
+<!DOCTYPE html>  
+<html>  
+<head>  
+    <meta charset="utf-8">  
+    <title></title>  
+</head>  
+<style type="text/css">    
+*{  
+    margin: 0;  
+    padding: 0;  
+}  
+#navBar{  
+    width: 50%;  
+    height: 400px;  
+    padding-bottom:40px;  
+    border: 1px solid #000;  
+    margin: 5% auto 0;  
+    position: relative;  
+    background: #ccc;  
+}   
+#navBar #box{  
+    width:100%;  
+    height:100%;  
+    background:#fcfcfc;  
+    text-align:center;  
+}    
+#navBar .dm_tool{  
+    width: 100%;  
+    height: 40px;  
+    background: #ccc;  
+    margin-top:1px;  
+    bottom: 0;  
+    display: flex;  
+}  
+#navBar .dm_tool .danmu{  
+    width: 89%;  
+    height: 38px;  
+    outline: none;  
+    border: 1px solid ;  
+    padding-left: 10px;  
+    float: left;      
+}  
+#navBar .dm_tool .send{  
+    width: 9.7%;    
+    color: white;  
+    outline: none;  
+    border: 0;   
+    background-color: black; 
+    cursor:pointer;  
+}  
+#navBar .dmArea{  
+    width:100%;  
+    height:400px;  
+    top:0;  
+    left:0;  
+    position:absolute;  
+    z-index:10;  
+    overflow:hidden;  
+}   
+#navBar .dmArea span{  
+    white-space:nowrap;  
+    position:absolute;  
+}  
+</style>  
+<body>
+<div id="navBar">  
+    <div id="box"><span style="position:absolute;top:45%;left:45%;"></span></div>  
+    <div class="dm_tool">  
+        <input type="text" name="danmu" class="danmu" />  
+        <button class="send">发送</button>  
+    </div>  
+    <div class="dmArea">   
+    </div>  
+</div>  
+</body>  
+<script src="./jquery-1.8.3.js"></script>  
+<script type="text/javascript">  
+var DmClass = {  
+    "Dm_H":0,  
+    "Dm_W":0,
+    "DmObj":"",  
+    init :  function(){  
+        var _this  = this;  
+        _this.DmObj = $(".dmArea");  
+        _this.Dm_H = _this.DmObj.height();  
+        _this.Dm_W = _this.DmObj.width();   
+        _this.sendFunc();  
+    },  
+    sendFunc    :    function(){  
+        var _this = this;  
+        $(".send").click(function(){  
+            var sendCon = $('input[name="danmu"]').val();  
+            if($.trim(sendCon) == "") {  
+                var testList = [];  
+                var _s = Math.floor(Math.random()*5);  
+                sendCon = testList[_s];   
+            }  
+            var sData = '{"data":"'+sendCon+'"}';   
+            SocketClass.websocket.send(sData);  
+        });  
+    },   
+    addToDm :   function(rdata){  
+        var _this = this;
+        var newObj = eval('(' + rdata + ')');   
+        var newDom = $("<span></span>");  
+        var p = _this.randPosition();  
+        newDom.html(newObj.data);  
+        _this.DmObj.append(newDom);    
+        newDom.css({"left":_this.Dm_W+"px","top":p+"px"});  
+        var tR = _this.Dm_W;   
+        var newTimer = setInterval(function(){  
+            tR -= 2;   
+            if(tR <= -newDom.width()){  
+                newDom.remove();  
+                clearInterval(newTimer);  
+            }
+            newDom.css("left",tR+"px");  
+        },20);  
+    },   
+    randPosition    :   function(){  
+        var _this = this;  
+        var rn = Math.floor(Math.random()*(_this.Dm_H - 20));  
+        return rn;  
+    },  
+}    
+var SocketClass = {  
+    "wsServer":"ws://39.106.144.186:9527",  
+    "websocket":"",   
+    init    :   function(){  
+        var _this = this;   
+        _this.socketServerInit();  
+    },  
+  
+    socketServerInit    :   function(){  
+        var _this = this;  
+        _this.websocket = new WebSocket(_this.wsServer);  
+        _this.websocket.onopen = function (evt) {  
+            console.log("Connected to WebSocket server.");  
+        };  
+        _this.websocket.onclose = function (evt) {  
+            alert("服务器关闭");  
+            console.log("Disconnected");  
+        };    
+        _this.websocket.onmessage = function (evt) {  
+            console.log('Retrieved data from server: ' + evt.data);   
+            DmClass.addToDm(evt.data);  
+        };   
+    },  
+}   
+$(function(){  
+    DmClass.init();  
+    SocketClass.init();  
+});  
+</script>  
+</html>
